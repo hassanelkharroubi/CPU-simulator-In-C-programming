@@ -1,35 +1,37 @@
-# Variables
+# Compiler and flags
 CC = gcc
-CFLAGS = -Wall -Wextra -g
+CFLAGS = -Wall -Wextra -g -Iinclude
 
-# Fichiers source
-SRCS = hashmap.c memory_handler.c test_memory.c
+# Directories
+SRC_DIR = src
+INC_DIR = include
+TEST_DIR = tests
 
-# Fichiers objets
+# Source files
+SRCS = $(SRC_DIR)/hashmap.c $(SRC_DIR)/memory_handler.c
 OBJS = $(SRCS:.c=.o)
 
-# Nom de l'exécutable final
-EXEC = tests
+# Test files
+TEST_SRCS = $(TEST_DIR)/test_memory.c
+TEST_OBJS = $(TEST_SRCS:.c=.o)
 
-# Règle par défaut : compiler l'exécutable
-$(EXEC): $(OBJS)
-	$(CC) $(OBJS) -o $(EXEC)
+# Target executable
+TARGET = test_runner
 
-# Règle pour compiler les fichiers .c en .o
-.c.o:
+# Build rules
+all: $(TARGET)
+
+$(SRC_DIR)/%.o: $(SRC_DIR)/%.c
 	$(CC) $(CFLAGS) -c $< -o $@
 
-# Règle pour nettoyer les fichiers objets et l'exécutable
+$(TEST_DIR)/%.o: $(TEST_DIR)/%.c
+	$(CC) $(CFLAGS) -c $< -o $@
+
+$(TARGET): $(OBJS) $(TEST_OBJS)
+	$(CC) $(CFLAGS) $(OBJS) $(TEST_OBJS) -o $(TARGET)
+
+run: $(TARGET)
+	./$(TARGET)
+
 clean:
-	rm -f $(OBJS) $(EXEC)
-
-# Règle pour recompiler tout depuis zéro
-fclean: clean
-	rm -f $(EXEC)
-
-# Règle pour recompiler les tests
-re: fclean $(EXEC)
-
-# Règle pour exécuter les tests
-run: $(EXEC)
-	./$(EXEC)
+	rm -f $(SRC_DIR)/*.o $(TEST_DIR)/*.o $(TARGET)

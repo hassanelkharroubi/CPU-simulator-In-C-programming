@@ -90,7 +90,7 @@ void test_remove_segment() {
     assert(seg->start == 0);
     assert(seg->size == 1024);
     assert(seg->next == NULL);
-    printf("✅ test_remove_segment_merge passed\n");
+    printf("✅ test_remove_segment passed\n");
 }
 
 
