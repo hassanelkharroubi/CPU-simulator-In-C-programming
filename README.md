@@ -1,1 +1,1 @@
-# CPU-simulator-In-C-programming
+# CPU simulator using C programming
