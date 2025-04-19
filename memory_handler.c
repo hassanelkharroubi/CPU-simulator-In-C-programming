@@ -30,7 +30,7 @@ MemoryHandler* memory_init(int size) {
     handler->free_list->size = size;
     handler->free_list->next = NULL;
 
-    handler->allocated = NULL; // No segment  has been allocated
+    handler->allocated =hashmap_create();
 
     return handler;
 }
@@ -42,6 +42,7 @@ Segment* find_free_segment(MemoryHandler* handler, int start, int size, Segment*
 
     while (curr != NULL) {
         if (curr->start <= start && (curr->start + curr->size) >= (start + size)) {
+            // TODO! : heck if shoud return curr or prev
             return *prev; // Segment free is found
         }
         *prev = curr;
@@ -62,6 +63,7 @@ int create_segment(MemoryHandler* handler, const char* name, int start, int size
 
     // Create the new allocated segment
     Segment* new_seg = malloc(sizeof(Segment));
+    
     if (!new_seg) {
         printf("Memory allocation failed.\n");
         return 0;
@@ -70,11 +72,10 @@ int create_segment(MemoryHandler* handler, const char* name, int start, int size
     new_seg->size = size;
     new_seg->next = NULL;
     hashmap_insert(handler->allocated, name, new_seg);
-
     // Split the free segment into parts (before and after)
     int before_size = start - free_seg->start;
     int after_size = (free_seg->start + free_seg->size) - (start + size);
-
+// todo : check this
     Segment* after_seg = NULL;
     if (after_size > 0) {
         after_seg = malloc(sizeof(Segment));

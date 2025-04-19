@@ -6,7 +6,6 @@
 // Q 1.1
 unsigned long simple_hash(const char* str) {
     unsigned long hash = 5381;
-    int c;
 
    for (int i = 0; str[i] != '\0'; i++) {
         hash += str[i]; 

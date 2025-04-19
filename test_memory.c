@@ -11,7 +11,7 @@ void test_memory_init() {
     assert(handler->free_list != NULL);
     assert(handler->free_list->start == 0);
     assert(handler->free_list->size == 1024);
-    printf("\u2714 test_memory_init passed.\n");
+    printf("\u2705 test_memory_init passed.\n");
 }
 
 void test_find_free_segment() {
@@ -20,7 +20,7 @@ void test_find_free_segment() {
     Segment* found = find_free_segment(handler, 100, 200, &prev);
     assert(found != NULL);
     assert(found->start == 0 && found->size == 1024);
-    printf("\u2714 test_find_free_segment passed.\n");
+    printf("\u2705 test_find_free_segment passed.\n");
 }
 
 void test_create_segment() {
@@ -30,7 +30,7 @@ void test_create_segment() {
     Segment* seg = (Segment*) hashmap_get(handler->allocated, "data");
     assert(seg != NULL);
     assert(seg->start == 100 && seg->size == 200);
-    printf("\u2714 test_create_segment passed.\n");
+    printf("\u2705 test_create_segment passed.\n");
 }
 
 void test_remove_segment() {
@@ -40,7 +40,7 @@ void test_remove_segment() {
     assert(removed == 1);
     Segment* seg = (Segment*) hashmap_get(handler->allocated, "data");
     assert(seg == NULL);
-    printf("\u2714 test_remove_segment passed.\n");
+    printf("\u2705 test_remove_segment passed.\n");
 }
 
 int main() {
