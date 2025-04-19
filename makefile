@@ -1,37 +1,34 @@
-# Compiler and flags
 CC = gcc
-CFLAGS = -Wall -Wextra -g -Iinclude
+CFLAGS = -Wall -Wextra -g -Iinclude -Iinclude/utils -Iinclude/data
 
-# Directories
 SRC_DIR = src
-INC_DIR = include
+OBJ_DIR = src
 TEST_DIR = tests
+BIN_DIR = bin
 
-# Source files
-SRCS = $(SRC_DIR)/hashmap.c $(SRC_DIR)/memory_handler.c
-OBJS = $(SRCS:.c=.o)
+SRC_FILES = $(SRC_DIR)/hashmap.c $(SRC_DIR)/memory_handler.c
+OBJ_FILES = $(SRC_FILES:.c=.o)
 
-# Test files
-TEST_SRCS = $(TEST_DIR)/test_memory.c
-TEST_OBJS = $(TEST_SRCS:.c=.o)
+TEST_FILE = $(TEST_DIR)/test_memory.c
+TEST_OBJ = $(TEST_FILE:.c=.o)
 
-# Target executable
-TARGET = test_runner
+TARGET = $(BIN_DIR)/tests
 
-# Build rules
+.PHONY: all run clean
+
 all: $(TARGET)
 
-$(SRC_DIR)/%.o: $(SRC_DIR)/%.c
-	$(CC) $(CFLAGS) -c $< -o $@
+$(TARGET): $(OBJ_FILES) $(TEST_OBJ) | $(BIN_DIR)
+	$(CC) $(CFLAGS) $^ -o $@
 
-$(TEST_DIR)/%.o: $(TEST_DIR)/%.c
-	$(CC) $(CFLAGS) -c $< -o $@
+$(BIN_DIR):
+	mkdir -p $(BIN_DIR)
 
-$(TARGET): $(OBJS) $(TEST_OBJS)
-	$(CC) $(CFLAGS) $(OBJS) $(TEST_OBJS) -o $(TARGET)
+%.o: %.c
+	$(CC) $(CFLAGS) -c $< -o $@
 
 run: $(TARGET)
 	./$(TARGET)
 
 clean:
-	rm -f $(SRC_DIR)/*.o $(TEST_DIR)/*.o $(TARGET)
+	rm -rf $(OBJ_FILES) $(TEST_OBJ) $(TARGET)
