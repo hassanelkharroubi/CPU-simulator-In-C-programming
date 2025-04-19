@@ -42,8 +42,7 @@ Segment* find_free_segment(MemoryHandler* handler, int start, int size, Segment*
 
     while (curr != NULL) {
         if (curr->start <= start && (curr->start + curr->size) >= (start + size)) {
-            // TODO! : heck if shoud return curr or prev
-            return *prev; // Segment free is found
+            return curr; // Segment free is found
         }
         *prev = curr;
         curr = curr->next;
@@ -103,36 +102,45 @@ int create_segment(MemoryHandler* handler, const char* name, int start, int size
 
 // Q2.4
 int remove_segment(MemoryHandler* handler, const char* name) {
-    // find segment in hash tmap table
+    // Find and remove from hashmap
     Segment* segment = hashmap_get(handler->allocated, name);
     if (!segment) {
         printf("Segment not found.\n");
         return 0;
     }
-
-    // remove seg from hash table
     hashmap_remove(handler->allocated, name);
 
-    // insert seg in free list of segments
     Segment* prev = NULL;
     Segment* curr = handler->free_list;
-    while (curr != NULL && curr->start < segment->start) {
+
+    // Find insertion point in sorted free list
+    while (curr && curr->start < segment->start) {
         prev = curr;
         curr = curr->next;
     }
 
-    // Merge with adjacent segments
-    if (prev != NULL && prev->start + prev->size == segment->start) {
-        prev->size += segment->size; // Merge with the previous segment
-    } else {
-        prev->next = segment;
-    }
-
-    if (curr != NULL && segment->start + segment->size == curr->start) {
-        segment->size += curr->size; // Merge with the next segment
+    // Try to merge with next
+    if (curr && segment->start + segment->size == curr->start) {
+        segment->size += curr->size;
         segment->next = curr->next;
         free(curr);
+    } else {
+        segment->next = curr;
+    }
+
+    // Try to merge with prev
+    if (prev && prev->start + prev->size == segment->start) {
+        prev->size += segment->size;
+        prev->next = segment->next;
+        free(segment);
+    } else {
+        if (prev) {
+            prev->next = segment;
+        } else {
+            handler->free_list = segment;
+        }
     }
 
     return 1;
 }
+
