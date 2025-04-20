@@ -6,10 +6,10 @@ OBJ_DIR = src
 TEST_DIR = tests
 BIN_DIR = bin
 
-SRC_FILES = $(SRC_DIR)/hashmap.c $(SRC_DIR)/memory_handler.c
+SRC_FILES = $(SRC_DIR)/hashmap.c $(SRC_DIR)/memory_handler.c $(SRC_DIR)/assembler_parser.c
 OBJ_FILES = $(SRC_FILES:.c=.o)
 
-TEST_FILE = $(TEST_DIR)/test_memory.c
+TEST_FILE = $(TEST_DIR)/test_assembler_parser.c
 TEST_OBJ = $(TEST_FILE:.c=.o)
 
 TARGET = $(BIN_DIR)/tests
