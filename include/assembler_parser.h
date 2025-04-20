@@ -1,4 +1,5 @@
 #include "hashmap.h"
+#include <ctype.h>
 typedef struct {
     char *mnemonic;  // Instruction mnemonic (ou nom de variable pour .DATA
     char *operand1;  // Premier operande (ou type pour .DATA)

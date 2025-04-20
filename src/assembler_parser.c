@@ -6,6 +6,21 @@
 #include <assert.h>
 #include <ctype.h>
 
+char* trim(char* str) {
+    // Skip leading spaces
+    while (isspace((unsigned char)*str)) str++;
+
+    if (*str == '\0') return str;  // all spaces
+
+    // Remove trailing spaces
+    char* end = str + strlen(str) - 1;
+    while (end > str && isspace((unsigned char)*end)) {
+        *end = '\0';
+        end--;
+    }
+
+    return str;
+}
 
 Instruction *parse_data_instruction(const char *line, HashMap *memory_locations) {
     static int current_address = 0;
@@ -46,63 +61,57 @@ Instruction *parse_data_instruction(const char *line, HashMap *memory_locations)
 }
 
 Instruction *parse_code_instruction(const char *line, HashMap *labels, int code_count) {
-    // Create a modifiable copy of the input line
     char *copy = strdup(line);
-    Instruction *instr = malloc(sizeof(Instruction));
-    assert(instr != NULL);
-    instr->mnemonic = NULL;
-    instr->operand1 = NULL;
-    instr->operand2 = NULL;
-
-    // 1. Handle label (if present) - look for ':' character
-    char *label_end = strchr(copy, ':');
-    if (label_end != NULL) {
-        *label_end = '\0';  // Terminate the label string
-        char *label = copy;
-        
-        // Trim whitespace from the label
-        while (isspace(*label)) label++;
-        char *end = label + strlen(label) - 1;
-        while (end > label && isspace(*end)) *end-- = '\0';
-        
-        // Store label in hashmap if not empty
-        if (*label != '\0') {
-            hashmap_insert(labels, strdup(label), (void*)(long)code_count);
+    Instruction *instr = calloc(1,sizeof(Instruction));
+    // Pointer to track our position in the string
+    char *cursor = copy;
+    
+    // Skip leading whitespace
+    while (isspace(*cursor)) cursor++;
+    
+    // Check for label (contains ':')
+    char *colon = strchr(cursor, ':');
+    if (colon != NULL) {
+        *colon = '\0';
+        while (isspace(*cursor)) cursor++;
+        hashmap_insert(labels,strdup(trim(cursor)),(void *)(long)code_count);
+        // Skip past the label and colon
+        cursor = colon + 1;
+        // Skip whitespace after colon
+        while (isspace(*cursor)) cursor++;
+    }
+    
+    // Now parse the instruction part
+    char *mnemonic_end = cursor;
+    while (*mnemonic_end && !isspace(*mnemonic_end)) mnemonic_end++;
+    if (mnemonic_end > cursor) {
+        instr->mnemonic = strndup(cursor, mnemonic_end - cursor);
+        cursor = mnemonic_end;
+    }
+    
+    // Skip to operands
+    while (isspace(*cursor)) cursor++;
+    
+    // Find comma separating operands
+    char *comma = strchr(cursor, ',');
+    if (comma != NULL) {
+        // Extract first operand (before comma)
+        char *op1_end = comma;
+        while (op1_end > cursor && isspace(*(op1_end-1))) op1_end--;
+        if (op1_end > cursor) {
+            instr->operand1 = trim(strndup(cursor, op1_end - cursor));
         }
-        copy = label_end + 1;  // Move past the ':'
-    }
-
-    // 2. Extract mnemonic 
-    char *token = strtok(copy, " ");  // Split on spaces
-    if (token == NULL) {
-        free(copy);
-        free(instr);
-        return NULL;  // Empty line after label
-    }
-    instr->mnemonic = strdup(token);
-
-    // 3. Handle operands
-    token = strtok(NULL, ",");  // Get first operand (split on comma)
-    if (token != NULL) {
-        // Trim whitespace from first operand
-        char *op = token;
-        while (isspace(*op)) op++;
-        char *end = op + strlen(op) - 1;
-        while (end > op && isspace(*end)) *end-- = '\0';
-        instr->operand1 = strdup(op);
-
-        // Get second operand
-        token = strtok(NULL, "");  // Get the rest of the string
-        if (token != NULL) {
-            while (isspace(*token)) token++;
-            end = token + strlen(token) - 1;
-            while (end > token && isspace(*end)) *end-- = '\0';
-            if (*token != '\0') {
-                instr->operand2 = strdup(token);
-            }
+        
+        // Extract second operand (after comma)
+        cursor = comma + 1;
+        while (isspace(*cursor)) cursor++;
+        if (*cursor) {
+            instr->operand2 = strdup(trim(cursor));
         }
+    } else if (*cursor) {
+        // Single operand case
+        instr->operand1 = strdup(trim(cursor));
     }
-
     free(copy);
     return instr;
 }

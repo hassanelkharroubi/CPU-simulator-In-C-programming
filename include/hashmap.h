@@ -1,6 +1,8 @@
 #ifndef HASHMAP_H
 #define HASHMAP_H
-
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 #define TABLE_SIZE 128
 #define TOMBSTONE ((void*) -1)
 
