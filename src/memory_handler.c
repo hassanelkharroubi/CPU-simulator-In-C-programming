@@ -1,5 +1,6 @@
 #include "memory_handler.h"
 #include "hashmap.h"
+#include <assert.h>
 
 // Q 2.1
 MemoryHandler* memory_init(int size) {
@@ -70,7 +71,7 @@ int create_segment(MemoryHandler* handler, const char* name, int start, int size
     new_seg->start = start;
     new_seg->size = size;
     new_seg->next = NULL;
-    hashmap_insert(handler->allocated, name, new_seg);
+    assert(hashmap_insert(handler->allocated, name, new_seg));
     // Split the free segment into parts (before and after)
     int before_size = start - free_seg->start;
     int after_size = (free_seg->start + free_seg->size) - (start + size);

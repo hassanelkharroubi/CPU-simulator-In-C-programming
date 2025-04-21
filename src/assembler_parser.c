@@ -49,12 +49,11 @@ Instruction *parse_data_instruction(const char *line, HashMap *memory_locations)
     }
 
     // insert into hash map 
-    printf("\n current_address before %d \n",current_address);
     hashmap_insert(memory_locations, instr->mnemonic, (void *)(long)current_address);
 
     // Mise à jour de l'adresse actuelle
     current_address += count;
-    printf("\n current_address after %d and count %d\n",current_address, count);
+
 
     free(copy);
     return instr;
