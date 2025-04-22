@@ -3,30 +3,19 @@
 
 // Test for store
 void test_store(CPU *cpu) {
-    MemoryHandler *handler = cpu->memory_handler;
     // Create a segment
-    assert(create_segment(handler, "DS", 0,10));
+    assert(create_segment(cpu->memory_handler, "DS", 0,10));
     int *val = malloc(sizeof(int));
     *val = 99;
 
-    assert(store(handler, "DS", 0, val));
+    assert(store(cpu->memory_handler, "DS", 0, val));
     printf("\n\u2705 Store test passed 🥳 !\n");
 }
 
 // Test for load
 void test_load(CPU *cpu) {
-
-    MemoryHandler *handler = cpu->memory_handler;
-    // Create a segment
-    assert(create_segment(handler, "DS", 0,10));
-
-    int *val = malloc(sizeof(int));
-    *val = 123;
-
-    assert(store(handler, "DS", 5, val));  // Store at position 5
-    int *retrieved = load(handler, "DS", 5);
-
-    assert(*retrieved == 123);
+    int *retrieved = load(cpu->memory_handler, "DS", 0);
+    assert(*retrieved == 99);
     printf("\n\u2705 Load test passed 🥳 !\n");
 
 }
@@ -34,9 +23,8 @@ void test_load(CPU *cpu) {
 
 
 // Test for allocate_variables
-void test_allocate_variables() {
+void test_allocate_variables(CPU *cpu) {
 
-    CPU *cpu = cpu_init(1024);
     ParserResult *parser= parse("tests/example.asm") ;
     assert(parser);
     allocate_variables(cpu, parser->data_instructions, parser->data_count);
@@ -46,15 +34,12 @@ void test_allocate_variables() {
 
 
 // Test for print_data_segment
-void test_print_data_segment() {
+
+void test_print_data_segment(CPU *cpu) {
+    // Now, print the data segment (DS)
+    print_data_segment(cpu);
 
 }
-
-
-
-
-
-
 
 void test_cpu(CPU *cpu)
 {
@@ -72,9 +57,14 @@ int main()
     test_cpu(cpu);
     test_store(cpu);
     test_load(cpu);
-    test_allocate_variables(cpu);
     cpu_destroy(cpu);
+    assert(cpu);
+    cpu = cpu_init(1024);
+    assert(cpu);
+    test_allocate_variables(cpu);
+    test_print_data_segment(cpu);
     printf("\n\u2705 All   tests passed 🥳 !\n");
+    cpu_destroy(cpu);
 
 
     return 0;

@@ -134,11 +134,11 @@ void allocate_variables(CPU *cpu, Instruction **data_instructions, int data_coun
                 int *value = malloc(sizeof(int));
                 *value = atoi(token); // Convert token to int
                 store(cpu->memory_handler, "DS", offset, value);
+                cpu->memory_handler->memory[i]=value;
                 offset++;
                 token = strtok(NULL, ",");
             }
-            // Insert the starting position of the array
-            // hashmap_insert(cpu->memory_handler, instr->mnemonic, (void *)(long)(offset - 1)); // or starting offset?
+            
             free(values);
         }
         else
@@ -146,8 +146,8 @@ void allocate_variables(CPU *cpu, Instruction **data_instructions, int data_coun
             // It's a single variable
             int *value = malloc(sizeof(int));
             *value = atoi(instr->operand2);
+            cpu->memory_handler->memory[i]=value;
             store(cpu->memory_handler, "DS", offset, value);
-            // hashmap_insert(cpu->memory_handler, instr->mnemonic, (void *)(long)offset);
             offset++;
         }
     }
