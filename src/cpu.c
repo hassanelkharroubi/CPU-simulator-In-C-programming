@@ -3,25 +3,34 @@
 
 CPU* cpu_init(int memory_size) {
     CPU *cpu = malloc(sizeof(CPU));
-    if (!cpu) {
-        printf("CPU allocation failed.\n");
-        return NULL;
-    }
+    if (!cpu) return NULL;
 
-    cpu->memory_handler = memory_init(memory_size);
+    cpu->memory_handler = memory_handler_init(memory_size);
     cpu->context = hashmap_create();
     cpu->constant_pool = hashmap_create();
 
-    // Initialize general-purpose registers
-    char *registers[] = {"AX", "BX", "CX", "DX", "IP", "ZF", "SF"};
-    for (int i = 0; i < 7; i++) {
-        int *value = malloc(sizeof(int));
-        *value = 0;
-        hashmap_insert(cpu->context, registers[i], value);
+    // General and special-purpose registers
+    const char *registers[] = {"AX", "BX", "CX", "DX", "IP", "ZF", "SF", "SP", "BP"};
+    for (int i = 0; i < 9; i++) {
+        int *val = malloc(sizeof(int));
+        *val = 0;
+        hashmap_insert(cpu->context, registers[i], val);
     }
 
+    // Allocate "SS" segment (stack), 128 units at the top of memory
+    int stack_size = 128;
+    int stack_start = memory_size - stack_size;
+    create_segment(cpu->memory_handler, "SS", stack_start, stack_size);
+
+    // Initialize SP and BP at the top of the stack (grows downward)
+    int *sp = hashmap_get(cpu->context, "SP");
+    int *bp = hashmap_get(cpu->context, "BP");
+    *sp = stack_size - 1; // relative index (top)
+    *bp = stack_size - 1;
     return cpu;
 }
+
+
 
 void cpu_destroy(CPU *cpu)
 {
