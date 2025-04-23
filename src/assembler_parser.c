@@ -6,7 +6,7 @@
 #include <assert.h>
 #include <ctype.h>
 
-char* trim(char* str) {
+char* tim_v1(char* str) {
     // Skip leading spaces
     while (isspace((unsigned char)*str)) str++;
 
@@ -73,7 +73,7 @@ Instruction *parse_code_instruction(const char *line, HashMap *labels, int code_
     if (colon != NULL) {
         *colon = '\0';
         while (isspace(*cursor)) cursor++;
-        hashmap_insert(labels,strdup(trim(cursor)),(void *)(long)code_count);
+        hashmap_insert(labels,strdup(tim_v1(cursor)),(void *)(long)code_count);
         // Skip past the label and colon
         cursor = colon + 1;
         // Skip whitespace after colon
@@ -98,18 +98,18 @@ Instruction *parse_code_instruction(const char *line, HashMap *labels, int code_
         char *op1_end = comma;
         while (op1_end > cursor && isspace(*(op1_end-1))) op1_end--;
         if (op1_end > cursor) {
-            instr->operand1 = trim(strndup(cursor, op1_end - cursor));
+            instr->operand1 = tim_v1(strndup(cursor, op1_end - cursor));
         }
         
         // Extract second operand (after comma)
         cursor = comma + 1;
         while (isspace(*cursor)) cursor++;
         if (*cursor) {
-            instr->operand2 = strdup(trim(cursor));
+            instr->operand2 = strdup(tim_v1(cursor));
         }
     } else if (*cursor) {
         // Single operand case
-        instr->operand1 = strdup(trim(cursor));
+        instr->operand1 = strdup(tim_v1(cursor));
     }
     free(copy);
     return instr;

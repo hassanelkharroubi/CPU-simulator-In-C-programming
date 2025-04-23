@@ -1,34 +1,44 @@
-CC = gcc
-CFLAGS = -Wall -Wextra -g -Iinclude
+# Makefile
 
-SRC_DIR = src
-OBJ_DIR = src
-TEST_DIR = tests
-BIN_DIR = bin
+CC      := gcc
+CFLAGS  := -Wall -Wextra -g -Iinclude
 
-SRC_FILES = $(SRC_DIR)/hashmap.c $(SRC_DIR)/memory_handler.c $(SRC_DIR)/assembler_parser.c $(SRC_DIR)/parser_result.c $(SRC_DIR)/cpu.c
-OBJ_FILES = $(SRC_FILES:.c=.o)
+SRC_DIR  := src
+TEST_DIR := tests
+OBJ_DIR  := obj
+BIN_DIR  := bin
 
-TEST_FILE = $(TEST_DIR)/test_cpu.c
-TEST_OBJ = $(TEST_FILE:.c=.o)
+# All .c under src/ and all test_*.c under tests/
+SRC_FILES   := $(wildcard $(SRC_DIR)/*.c)
+TEST_SRCS   := $(wildcard $(TEST_DIR)/test_*.c)
 
-TARGET = $(BIN_DIR)/tests
+# Map to corresponding .o in obj/
+OBJ_FILES   := $(patsubst $(SRC_DIR)/%.c,$(OBJ_DIR)/%.o,$(SRC_FILES))
+TEST_OBJS   := $(patsubst $(TEST_DIR)/%.c,$(OBJ_DIR)/%.o,$(TEST_SRCS))
 
-.PHONY: all run clean
+# One executable per test, named bin/<testname>
+TEST_BINS   := $(patsubst $(TEST_DIR)/%.c,$(BIN_DIR)/%,$(TEST_SRCS))
 
-all: $(TARGET)
+.PHONY: all clean
 
-$(TARGET): $(OBJ_FILES) $(TEST_OBJ) | $(BIN_DIR)
+all: dirs $(TEST_BINS)
+
+# Link each test binary against all src objects + its own test obj
+$(BIN_DIR)/%: $(OBJ_DIR)/%.o $(OBJ_FILES)
 	$(CC) $(CFLAGS) $^ -o $@
 
-$(BIN_DIR):
-	mkdir -p $(BIN_DIR)
-
-%.o: %.c
+# Compile application sources -> obj/
+$(OBJ_DIR)/%.o: $(SRC_DIR)/%.c | dirs
 	$(CC) $(CFLAGS) -c $< -o $@
 
-run: $(TARGET)
-	./$(TARGET)
+# Compile test sources -> obj/
+$(OBJ_DIR)/%.o: $(TEST_DIR)/%.c | dirs
+	$(CC) $(CFLAGS) -c $< -o $@
 
+# Ensure directories exist
+dirs:
+	mkdir -p $(OBJ_DIR) $(BIN_DIR)
+
+# Clean up
 clean:
-	rm -rf $(OBJ_FILES) $(TEST_OBJ) $(TARGET)
+	rm -rf $(OBJ_DIR) $(BIN_DIR)

@@ -1,8 +1,9 @@
+#ifndef CPU_H
+#define CPU_H
 #include "parser_result.h"
 #include "memory_handler.h"
 #include <regex.h>
 #include <stdbool.h>
-#include "extra_segment.h"
 typedef struct {
 MemoryHandler * memory_handler ; // Gestionnaire de memoire
 HashMap * context ; // Registres (AX, BX, CX, DX)
@@ -10,6 +11,7 @@ HashMap * constant_pool ; // Table de hachage pour stocker les valeurs i m m d i
 
 } CPU ;
 
+#include "extra_segment.h"
 
 CPU *cpu_init(int memory_size);
 void cpu_destroy(CPU *cpu);
@@ -28,3 +30,4 @@ void handle_MOV(CPU* cpu, void* src, void* dest);
 void *resolve_addressing(CPU *cpu, const char *operand);
 CPU *setup_test_environment();
 
+#endif // CPU_H

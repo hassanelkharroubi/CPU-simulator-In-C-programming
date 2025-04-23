@@ -4,7 +4,7 @@
 CPU* cpu_init(int memory_size) {
     CPU *cpu = malloc(sizeof(CPU));
     if (!cpu) {
-        printf("Error: CPU allocation failed\n");
+        printf("Error: CPU allocation failed\\n");
         return NULL;
     }
 
@@ -70,7 +70,7 @@ void *store(MemoryHandler *handler, const char *segment_name, int pos, void *dat
     
     if (!segment || pos < 0 || pos >= segment->size)
     {
-        printf("Error: segment not found or position invalid.\n");
+        printf("Error: segment not found or position invalid.\\n");
         return NULL;
     }
 
@@ -88,13 +88,13 @@ void *load(MemoryHandler *handler, const char *segment_name, int pos)
     Segment *segment = (Segment *)hashmap_get(handler->allocated, segment_name);
     if (!segment)
     {
-        printf("Error : segment '%s' not found.\n", segment_name);
+        printf("Error : segment '%s' not found.\\n", segment_name);
         return NULL;
     }
 
     if (pos < 0 || pos >= segment->size)
     {
-        printf("Error : position %d out of range of segment '%s'.\n", pos, segment_name);
+        printf("Error : position %d out of range of segment '%s'.\\n", pos, segment_name);
         return NULL;
     }
 
@@ -136,7 +136,7 @@ void allocate_variables(CPU *cpu, Instruction **data_instructions, int data_coun
     // TODO! check for existing segment
     if (create_segment(cpu->memory_handler, "DS", 0, total_size) == 0)
     {
-        printf("Error : impossible to create a segment DS.\n");
+        printf("Error : impossible to create a segment DS.\\n");
         return;
     }
 
@@ -185,20 +185,20 @@ void print_data_segment(CPU *cpu)
     Segment *segment = (Segment *)hashmap_get(cpu->memory_handler->allocated, "DS");
     if (!segment)
     {
-        printf("Segment 'DS' not found.\n");
+        printf("Segment 'DS' not found.\\n");
         return;
     }
 
-    printf("Content of DS segment :\n");
+    printf("Content of DS segment :\\n");
     for (int i = 0; i < segment->size; i++)
     {
         int mem_index = segment->start + i;
         int *val_ptr = (int *)cpu->memory_handler->memory[mem_index];
 
         if (val_ptr)
-            printf("Addresse %d (pos %d): %d\n", mem_index, i, *val_ptr);
+            printf("Addresse %d (pos %d): %d\\n", mem_index, i, *val_ptr);
         else
-            printf("Addresse %d (pos %d): NULL\n", mem_index, i);
+            printf("Addresse %d (pos %d): NULL\\n", mem_index, i);
     }
 }
 
@@ -207,7 +207,7 @@ int matches(const char *pattern, const char *string) {
     regex_t regex;
     int result = regcomp(&regex, pattern, REG_EXTENDED);
     if (result) {
-        fprintf(stderr, "Regex compilation failed for pattern: %s\n", pattern);
+        fprintf(stderr, "Regex compilation failed for pattern: %s\\n", pattern);
         return 0;
     }
     result = regexec(&regex, string, 0, NULL, 0);
@@ -239,7 +239,7 @@ void* register_addressing(CPU* cpu, const char* operand) {
 //Q 5.4 
 
 void* memory_direct_addressing(CPU* cpu, const char* operand) {
-    if (!matches("^\[[0-9]+\]$", operand)) return NULL;
+    if (!matches("^\\[[0-9]+\\]$", operand)) return NULL;
 
     char copy[strlen(operand) - 1];
     strncpy(copy, operand + 1, strlen(operand) - 2);
@@ -253,7 +253,7 @@ void* memory_direct_addressing(CPU* cpu, const char* operand) {
 // Q 5.5
 
 void* register_indirect_addressing(CPU* cpu, const char* operand) {
-    if (!matches("^\[(AX|BX|CX|DX)\]$", operand)) return NULL;
+    if (!matches("^\\[(AX|BX|CX|DX)\\]$", operand)) return NULL;
 
     char reg[3];
     strncpy(reg, operand + 1, 2);
@@ -268,6 +268,7 @@ void* register_indirect_addressing(CPU* cpu, const char* operand) {
 }
 
 void handle_MOV(CPU* cpu, void* src, void* dest) {
+    (void)cpu;     // suppress “unused parameter” warning
     if (!src || !dest) return;
     *((int*)dest) = *((int*)src);
 }
@@ -277,7 +278,7 @@ CPU *setup_test_environment() {
     // Initialiser le CPU
     CPU *cpu = cpu_init(1024);
     if (!cpu) {
-        printf("Error: CPU initialization failed\n");
+        printf("Error: CPU initialization failed\\n");
         return NULL;
     }
 
@@ -304,7 +305,7 @@ CPU *setup_test_environment() {
         }
     }
 
-    printf("Test environment initialized.\n");
+    printf("Test environment initialized.\\n");
     return cpu;
 }
 
@@ -336,7 +337,7 @@ void* resolve_addressing(CPU *cpu, const char *operand) {
     if (result) return result;
 
      // uknown
-    printf("Erreur : mode d'adressage non reconnu pour l'opérande '%s'\n", operand);
+    printf("Erreur : mode d'adressage non reconnu pour l'opérande '%s'\\n", operand);
     return NULL;
 
 }

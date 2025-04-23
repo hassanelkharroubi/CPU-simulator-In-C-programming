@@ -5,7 +5,7 @@
 // [SEG:REG] => load from segment SEG at address stored in REG
 void* segment_override_addressing(CPU *cpu, const char *operand) {
     // Regex for “[XX:YY]” where XX and YY are two uppercase letters
-    const char *pattern = "^\[([A-Z]{2}):([A-Z]{2})\]$";
+    const char *pattern = "^\\[([A-Z]{2}):([A-Z]{2})\\]$";
     regex_t regex;
     if (regcomp(&regex, pattern, REG_EXTENDED) != 0) return NULL;
 
@@ -34,31 +34,6 @@ void* segment_override_addressing(CPU *cpu, const char *operand) {
     return load(cpu->memory_handler, seg, address);
 }
 
-
-// Q 8.2
-
-void* resolve_addressing(CPU *cpu, const char *operand) {
-    void *res;
-
-    // 1) segment override [SEG:REG]
-    res = segment_override_addressing(cpu, operand);
-    if (res) return res;
-
-    // 2) immediate, register, direct, indirect (existing order)...
-    res = immediate_addressing(cpu, operand);
-    if (res) return res;
-
-    res = register_addressing(cpu, operand);
-    if (res) return res;
-
-    res = memory_direct_addressing(cpu, operand);
-    if (res) return res;
-
-    res = register_indirect_addressing(cpu, operand);
-    if (res) return res;
-
-    return NULL;
-}
 
 // Return start address of a free block of >= size, by strategy:
 // 0=First Fit, 1=Best Fit, 2=Worst Fit

@@ -1,3 +1,5 @@
+#ifndef ASSEMBLER_PARSER_H
+#define ASSEMBLER_PARSER_H
 #include "hashmap.h"
 #include <ctype.h>
 typedef struct {
@@ -20,3 +22,6 @@ typedef struct {
 Instruction *parse_data_instruction(const char *line, HashMap *memory_locations);
 // Q3.2
 Instruction *parse_code_instruction(const char *line, HashMap *labels, int code_count);
+
+
+#endif // ASSEMBLER_PARSER_H
