@@ -1,20 +1,24 @@
 #include "cpu.h"
 #include <assert.h>
 
-CPU *cpu_init(int memory_size)
-{
+CPU* cpu_init(int memory_size) {
     CPU *cpu = malloc(sizeof(CPU));
-    if (!cpu)
+    if (!cpu) {
+        printf("CPU allocation failed.\n");
         return NULL;
+    }
 
     cpu->memory_handler = memory_init(memory_size);
     cpu->context = hashmap_create();
-    cpu->constant_pool = hashmap_create(); 
+    cpu->constant_pool = hashmap_create();
 
-    hashmap_insert(cpu->context, "AX", 0);
-    hashmap_insert(cpu->context, "BX", 0);
-    hashmap_insert(cpu->context, "CX", 0);
-    hashmap_insert(cpu->context, "DX", 0);
+    // Initialize general-purpose registers
+    char *registers[] = {"AX", "BX", "CX", "DX", "IP", "ZF", "SF"};
+    for (int i = 0; i < 7; i++) {
+        int *value = malloc(sizeof(int));
+        *value = 0;
+        hashmap_insert(cpu->context, registers[i], value);
+    }
 
     return cpu;
 }
