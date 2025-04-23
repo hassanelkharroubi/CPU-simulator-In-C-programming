@@ -1,4 +1,4 @@
-#include "data_segment_allocation.h"
+#include "cpu.h"
 #include <assert.h>
 
 // Test for store
