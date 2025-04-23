@@ -3,32 +3,41 @@
 
 CPU* cpu_init(int memory_size) {
     CPU *cpu = malloc(sizeof(CPU));
-    if (!cpu) return NULL;
-
-    cpu->memory_handler = memory_handler_init(memory_size);
-    cpu->context = hashmap_create();
-    cpu->constant_pool = hashmap_create();
-
-    // General and special-purpose registers
-    const char *registers[] = {"AX", "BX", "CX", "DX", "IP", "ZF", "SF", "SP", "BP"};
-    for (int i = 0; i < 9; i++) {
-        int *val = malloc(sizeof(int));
-        *val = 0;
-        hashmap_insert(cpu->context, registers[i], val);
+    if (!cpu) {
+        printf("Error: CPU allocation failed\n");
+        return NULL;
     }
 
-    // Allocate "SS" segment (stack), 128 units at the top of memory
-    int stack_size = 128;
+    cpu->memory_handler = memory_init(memory_size);
+    cpu->context        = hashmap_create();
+    cpu->constant_pool  = hashmap_create();
+
+    // General-purpose + special registers
+    const char *regs[] = {
+        "AX","BX","CX","DX",
+        "IP","ZF","SF",
+        "SP","BP","ES"
+    };
+    for (int i = 0; i < 10; i++) {
+        int *val = malloc(sizeof(int));
+        *val = (strcmp(regs[i], "ES")==0 ? -1 : 0);  // ES starts at -1
+        hashmap_insert(cpu->context, regs[i], val);
+    }
+
+    // Stack segment "SS" (128 units at top of memory)
+    int stack_size  = 128;
     int stack_start = memory_size - stack_size;
     create_segment(cpu->memory_handler, "SS", stack_start, stack_size);
 
-    // Initialize SP and BP at the top of the stack (grows downward)
+    // Initialize SP and BP to top of stack (relative)
     int *sp = hashmap_get(cpu->context, "SP");
     int *bp = hashmap_get(cpu->context, "BP");
-    *sp = stack_size - 1; // relative index (top)
+    *sp = stack_size - 1;
     *bp = stack_size - 1;
+
     return cpu;
 }
+
 
 
 
@@ -302,35 +311,33 @@ CPU *setup_test_environment() {
 
 
 // Q 5.8
-
-void *resolve_addressing(CPU *cpu, const char *operand) {
+// Attempts each addressing mode in turn and returns the first non-NULL result
+void* resolve_addressing(CPU *cpu, const char *operand) {
     void *result;
 
-    // 1. @ immediate
+    // 1) Explicit segment override: [SEG:REG]
+    result = segment_override_addressing(cpu, operand);
+    if (result) return result;
+
+    // 2) Immediate literal (e.g. "42")
     result = immediate_addressing(cpu, operand);
-    if (result != NULL) {
-        return result;
-    }
+    if (result) return result;
 
-    // 2. @ per  registre
+    // 3) Register direct (e.g. "AX")
     result = register_addressing(cpu, operand);
-    if (result != NULL) {
-        return result;
-    }
+    if (result) return result;
 
-    // 3. @ direct (ex: [5])
+    // 4) Memory direct (e.g. "[5]")
     result = memory_direct_addressing(cpu, operand);
-    if (result != NULL) {
-        return result;
-    }
+    if (result) return result;
 
-    // 4. @ indirect per  registre (ex: [AX])
+    // 5) Register indirect (e.g. "[AX]")
     result = register_indirect_addressing(cpu, operand);
-    if (result != NULL) {
-        return result;
-    }
+    if (result) return result;
 
-    // uknown
+     // uknown
     printf("Erreur : mode d'adressage non reconnu pour l'opérande '%s'\n", operand);
     return NULL;
+
 }
+

@@ -1,6 +1,4 @@
 #include "code_segment.h"
-#include "cpu.h"
-
 char *trim(char *str) {
     while (*str == ' ' || *str == '\t' || *str == '\n' || *str == '\r') str++;
 
@@ -101,6 +99,8 @@ void allocate_code_segment(CPU *cpu, Instruction **code_instructions, int code_c
 
 //Q 6.4
 // Execute the logic of one instruction
+// Executes the semantic of a single instruction. 
+// "src" and "dest" have been pre-resolved by resolve_addressing().
 int handle_instruction(CPU *cpu, Instruction *instr, void *src, void *dest) {
     int *zf = hashmap_get(cpu->context, "ZF");
     int *sf = hashmap_get(cpu->context, "SF");
@@ -108,68 +108,70 @@ int handle_instruction(CPU *cpu, Instruction *instr, void *src, void *dest) {
 
     // MOV dest, src
     if (strcmp(instr->mnemonic, "MOV") == 0) {
-        if (src && dest) *(int *)dest = *(int *)src;
+        if (src && dest) *(int*)dest = *(int*)src;
     }
-
     // ADD dest, src
     else if (strcmp(instr->mnemonic, "ADD") == 0) {
-        if (src && dest) *(int *)dest += *(int *)src;
+        if (src && dest) *(int*)dest += *(int*)src;
     }
-
-    // CMP dest, src — Updates ZF and SF
+    // CMP dest, src — set ZF and SF
     else if (strcmp(instr->mnemonic, "CMP") == 0) {
         if (src && dest) {
-            int result = *(int *)dest - *(int *)src;
+            int result = *(int*)dest - *(int*)src;
             *zf = (result == 0);
             *sf = (result < 0);
         }
     }
-
-    // JMP addr — Unconditional jump
+    // JMP addr
     else if (strcmp(instr->mnemonic, "JMP") == 0) {
         if (instr->operand1) *ip = atoi(instr->operand1);
-        return 1; // force jump
+        return 1;
     }
-
-    // JZ addr — Jump if zero flag
+    // JZ addr
     else if (strcmp(instr->mnemonic, "JZ") == 0) {
         if (*zf == 1 && instr->operand1) {
             *ip = atoi(instr->operand1);
             return 1;
         }
     }
-
-    // JNZ addr — Jump if not zero flag
+    // JNZ addr
     else if (strcmp(instr->mnemonic, "JNZ") == 0) {
         if (*zf == 0 && instr->operand1) {
             *ip = atoi(instr->operand1);
             return 1;
         }
     }
-
-    // HALT — Stop program
+    // HALT
     else if (strcmp(instr->mnemonic, "HALT") == 0) {
-        *ip = cpu->memory_handler->total_size; // force termination
+        *ip = cpu->memory_handler->total_size;
         return 1;
     }
-
-    // PUSH src — push value onto stack
+    // PUSH src
     else if (strcmp(instr->mnemonic, "PUSH") == 0) {
+        // if no operand, default to AX
         void *val = resolve_addressing(cpu, instr->operand1 ? instr->operand1 : "AX");
-        if (val) push_value(cpu, *(int *)val);
+        if (val) push_value(cpu, *(int*)val);
     }
-
-    // POP dest — pop value from stack into register/memory
+    // POP dest
     else if (strcmp(instr->mnemonic, "POP") == 0) {
-        int popped = 0;
-        if (pop_value(cpu, &popped) == 0) {
+        int temp = 0;
+        if (pop_value(cpu, &temp) == 0) {
             void *target = resolve_addressing(cpu, instr->operand1 ? instr->operand1 : "AX");
-            if (target) *(int *)target = popped;
+            if (target) *(int*)target = temp;
         }
+    }
+    // ALLOC — allocate extra segment ES
+    else if (strcmp(instr->mnemonic, "ALLOC") == 0) {
+        alloc_es_segment(cpu);
+    }
+    // FREE — free extra segment ES
+    else if (strcmp(instr->mnemonic, "FREE") == 0) {
+        free_es_segment(cpu);
     }
 
     return 0;
 }
+
 
 
 
