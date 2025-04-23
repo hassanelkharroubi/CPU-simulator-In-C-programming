@@ -1,7 +1,6 @@
 #include "code_segment.h"
 #include "cpu.h"
 
-
 char *trim(char *str) {
     while (*str == ' ' || *str == '\t' || *str == '\n' || *str == '\r') str++;
 
@@ -103,40 +102,75 @@ void allocate_code_segment(CPU *cpu, Instruction **code_instructions, int code_c
 //Q 6.4
 // Execute the logic of one instruction
 int handle_instruction(CPU *cpu, Instruction *instr, void *src, void *dest) {
-    int *src_val = (int *) src;
-    int *dst_val = (int *) dest;
     int *zf = hashmap_get(cpu->context, "ZF");
     int *sf = hashmap_get(cpu->context, "SF");
     int *ip = hashmap_get(cpu->context, "IP");
 
+    // MOV dest, src
     if (strcmp(instr->mnemonic, "MOV") == 0) {
-        *dst_val = *src_val;
-    } else if (strcmp(instr->mnemonic, "ADD") == 0) {
-        *dst_val += *src_val;
-    } else if (strcmp(instr->mnemonic, "CMP") == 0) {
-        int result = *dst_val - *src_val;
-        *zf = (result == 0) ? 1 : 0;
-        *sf = (result < 0) ? 1 : 0;
-    } else if (strcmp(instr->mnemonic, "JMP") == 0) {
-        *ip = atoi(instr->operand1);
-        return 1; // jump modifies IP
-    } else if (strcmp(instr->mnemonic, "JZ") == 0) {
-        if (*zf == 1) {
+        if (src && dest) *(int *)dest = *(int *)src;
+    }
+
+    // ADD dest, src
+    else if (strcmp(instr->mnemonic, "ADD") == 0) {
+        if (src && dest) *(int *)dest += *(int *)src;
+    }
+
+    // CMP dest, src — Updates ZF and SF
+    else if (strcmp(instr->mnemonic, "CMP") == 0) {
+        if (src && dest) {
+            int result = *(int *)dest - *(int *)src;
+            *zf = (result == 0);
+            *sf = (result < 0);
+        }
+    }
+
+    // JMP addr — Unconditional jump
+    else if (strcmp(instr->mnemonic, "JMP") == 0) {
+        if (instr->operand1) *ip = atoi(instr->operand1);
+        return 1; // force jump
+    }
+
+    // JZ addr — Jump if zero flag
+    else if (strcmp(instr->mnemonic, "JZ") == 0) {
+        if (*zf == 1 && instr->operand1) {
             *ip = atoi(instr->operand1);
             return 1;
         }
-    } else if (strcmp(instr->mnemonic, "JNZ") == 0) {
-        if (*zf == 0) {
+    }
+
+    // JNZ addr — Jump if not zero flag
+    else if (strcmp(instr->mnemonic, "JNZ") == 0) {
+        if (*zf == 0 && instr->operand1) {
             *ip = atoi(instr->operand1);
             return 1;
         }
-    } else if (strcmp(instr->mnemonic, "HALT") == 0) {
-        *ip = cpu->memory_handler->total_size;
+    }
+
+    // HALT — Stop program
+    else if (strcmp(instr->mnemonic, "HALT") == 0) {
+        *ip = cpu->memory_handler->total_size; // force termination
         return 1;
+    }
+
+    // PUSH src — push value onto stack
+    else if (strcmp(instr->mnemonic, "PUSH") == 0) {
+        void *val = resolve_addressing(cpu, instr->operand1 ? instr->operand1 : "AX");
+        if (val) push_value(cpu, *(int *)val);
+    }
+
+    // POP dest — pop value from stack into register/memory
+    else if (strcmp(instr->mnemonic, "POP") == 0) {
+        int popped = 0;
+        if (pop_value(cpu, &popped) == 0) {
+            void *target = resolve_addressing(cpu, instr->operand1 ? instr->operand1 : "AX");
+            if (target) *(int *)target = popped;
+        }
     }
 
     return 0;
 }
+
 
 
 //Q 6.5
