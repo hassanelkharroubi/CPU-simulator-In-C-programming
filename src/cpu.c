@@ -1,4 +1,4 @@
-#include "data_segment_allocation.h"
+#include "cpu.h"
 #include <assert.h>
 
 CPU *cpu_init(int memory_size)
@@ -9,6 +9,7 @@ CPU *cpu_init(int memory_size)
 
     cpu->memory_handler = memory_init(memory_size);
     cpu->context = hashmap_create();
+    cpu->constant_pool = hashmap_create(); 
 
     hashmap_insert(cpu->context, "AX", 0);
     hashmap_insert(cpu->context, "BX", 0);
@@ -24,6 +25,7 @@ void cpu_destroy(CPU *cpu)
         return;
 
     hashmap_destroy(cpu->context);
+    hashmap_destroy(cpu->constant_pool);
     free(cpu->memory_handler->memory);
 
     Segment *curr = cpu->memory_handler->free_list;
@@ -176,4 +178,146 @@ void print_data_segment(CPU *cpu)
         else
             printf("Addresse %d (pos %d): NULL\n", mem_index, i);
     }
+}
+
+
+int matches(const char *pattern, const char *string) {
+    regex_t regex;
+    int result = regcomp(&regex, pattern, REG_EXTENDED);
+    if (result) {
+        fprintf(stderr, "Regex compilation failed for pattern: %s\n", pattern);
+        return 0;
+    }
+    result = regexec(&regex, string, 0, NULL, 0);
+    regfree(&regex);
+    return result == 0;
+}
+
+// Q 5.2
+
+void* immediate_addressing(CPU* cpu, const char* operand) {
+    if (!matches("^[0-9]+$", operand)) return NULL;
+
+    void* existing = hashmap_get(cpu->constant_pool, operand);
+    if (existing) return existing;
+
+    int* value = malloc(sizeof(int));
+    *value = atoi(operand);
+    hashmap_insert(cpu->constant_pool, operand, value);
+    return value;
+}
+
+//Q 5.3
+
+void* register_addressing(CPU* cpu, const char* operand) {
+    if (!matches("^(AX|BX|CX|DX)$", operand)) return NULL;
+    return hashmap_get(cpu->context, operand);
+}
+
+//Q 5.4 
+
+void* memory_direct_addressing(CPU* cpu, const char* operand) {
+    if (!matches("^\[[0-9]+\]$", operand)) return NULL;
+
+    char copy[strlen(operand) - 1];
+    strncpy(copy, operand + 1, strlen(operand) - 2);
+    copy[strlen(operand) - 2] = '\0';
+
+    int index = atoi(copy);
+    if (index < 0 || index >= cpu->memory_handler->total_size) return NULL;
+   return load(cpu->memory_handler, "DS", index);
+}
+
+// Q 5.5
+
+void* register_indirect_addressing(CPU* cpu, const char* operand) {
+    if (!matches("^\[(AX|BX|CX|DX)\]$", operand)) return NULL;
+
+    char reg[3];
+    strncpy(reg, operand + 1, 2);
+    reg[2] = '\0';
+
+    int* reg_value = hashmap_get(cpu->context, reg);
+    if (!reg_value) return NULL;
+
+    int address = *reg_value;
+    if (address < 0 || address >= cpu->memory_handler->total_size) return NULL;
+    return load(cpu->memory_handler, "DS", address);
+}
+
+void handle_MOV(CPU* cpu, void* src, void* dest) {
+    if (!src || !dest) return;
+    *((int*)dest) = *((int*)src);
+}
+// Q 5/7
+
+CPU *setup_test_environment() {
+    // Initialiser le CPU
+    CPU *cpu = cpu_init(1024);
+    if (!cpu) {
+        printf("Error: CPU initialization failed\n");
+        return NULL;
+    }
+
+    // Initialiser les registres avec des valeurs spécifiques
+    int *ax = (int *) hashmap_get(cpu->context, "AX");
+    int *bx = (int *) hashmap_get(cpu->context, "BX");
+    int *cx = (int *) hashmap_get(cpu->context, "CX");
+    int *dx = (int *) hashmap_get(cpu->context, "DX");
+
+    *ax = 3;
+    *bx = 6;
+    *cx = 100;
+    *dx = 0;
+
+    // Créer et initialiser le segment de données
+    if (!hashmap_get(cpu->memory_handler->allocated, "DS")) {
+        create_segment(cpu->memory_handler, "DS", 0, 20);
+
+        // Initialiser le segment de données avec des valeurs de test
+        for (int i = 0; i < 10; i++) {
+            int *value = (int *) malloc(sizeof(int));
+            *value = i * 10 + 5; // Valeurs : 5, 15, 25, ...
+            store(cpu->memory_handler, "DS", i, value);
+        }
+    }
+
+    printf("Test environment initialized.\n");
+    return cpu;
+}
+
+
+
+// Q 5.8
+
+void *resolve_addressing(CPU *cpu, const char *operand) {
+    void *result;
+
+    // 1. @ immediate
+    result = immediate_addressing(cpu, operand);
+    if (result != NULL) {
+        return result;
+    }
+
+    // 2. @ per  registre
+    result = register_addressing(cpu, operand);
+    if (result != NULL) {
+        return result;
+    }
+
+    // 3. @ direct (ex: [5])
+    result = memory_direct_addressing(cpu, operand);
+    if (result != NULL) {
+        return result;
+    }
+
+    // 4. @ indirect per  registre (ex: [AX])
+    result = register_indirect_addressing(cpu, operand);
+    if (result != NULL) {
+        return result;
+    }
+
+    // uknown
+    printf("Erreur : mode d'adressage non reconnu pour l'opérande '%s'\n", operand);
+    return NULL;
 }
