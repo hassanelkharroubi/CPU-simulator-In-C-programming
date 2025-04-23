@@ -2,6 +2,7 @@
 #include "memory_handler.h"
 #include <regex.h>
 #include <stdbool.h>
+#include "extra_segment.h"
 typedef struct {
 MemoryHandler * memory_handler ; // Gestionnaire de memoire
 HashMap * context ; // Registres (AX, BX, CX, DX)
